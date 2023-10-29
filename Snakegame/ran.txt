@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include <vector>
@@ -8,19 +8,22 @@
 
 using namespace std;
 
-const int SCREEN_WIDTH = 640;//kích thước
-const int SCREEN_HEIGHT = 480;
-const int GRID_SIZE = 20;
-const SDL_Color HEAD_COLOR = { 0, 255, 0, 255 };// r g b a
+const int SCREEN_WIDTH = 640;          // Chiều rộng cửa sổ trò chơi
+const int SCREEN_HEIGHT = 480;         // Chiều cao cửa sổ trò chơi
+const int GRID_SIZE = 20;             // Kích thước ô lưới
+const SDL_Color HEAD_COLOR = { 0, 255, 0, 255 }; // Màu sắc của đầu rắn
 
-struct Point {//cấu trúc điểm theo grid
+// Cấu trúc để lưu trữ tọa độ của một điểm
+struct Point {
     int x;
     int y;
 };
 
-enum class Direction { UP, DOWN, LEFT, RIGHT }; //lớp liệt kê
+// Liệt kê hướng đi của rắn
+enum class Direction { UP, DOWN, LEFT, RIGHT };
 
-void CheckBorderCrossing(Point& head) {//hàm kiểm tra vượt biên
+// Hàm kiểm tra việc vượt qua biên của rắn và điều chỉnh tọa độ nếu cần
+void CheckBorderCrossing(Point& head) {
     if (head.x < 0) {
         head.x = (SCREEN_WIDTH / GRID_SIZE) - 1;
     }
@@ -28,26 +31,29 @@ void CheckBorderCrossing(Point& head) {//hàm kiểm tra vượt biên
         head.x = 0;
     }
 
-    if (head.y < 2) {
+    if (head.y < 0) {
         head.y = (SCREEN_HEIGHT / GRID_SIZE) - 1;
     }
     else if (head.y >= (SCREEN_HEIGHT / GRID_SIZE)) {
-        head.y = 2;
+        head.y = 0;
     }
 }
 
 int main(int argc, char* argv[]) {
+    // Khởi tạo SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         cerr << "SDL initialization failed: " << SDL_GetError() << endl;
         return 1;
     }
 
+    // Khởi tạo SDL_ttf (thư viện cho văn bản)
     if (TTF_Init() < 0) {
         cerr << "SDL_ttf initialization failed: " << TTF_GetError() << endl;
         SDL_Quit();
         return 1;
     }
 
+    // Tạo cửa sổ trò chơi
     SDL_Window* window = SDL_CreateWindow("Snake Game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     if (!window) {
         cerr << "Window creation failed: " << SDL_GetError() << endl;
@@ -56,6 +62,7 @@ int main(int argc, char* argv[]) {
         return 2;
     }
 
+    // Tạo renderer (để vẽ hình ảnh)
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (!renderer) {
         cerr << "Renderer creation failed: " << SDL_GetError() << endl;
@@ -65,7 +72,8 @@ int main(int argc, char* argv[]) {
         return 3;
     }
 
-    TTF_Font* font = TTF_OpenFont("your_font.ttf", 30);
+    // Tải font
+    TTF_Font* font = TTF_OpenFont("your_font.ttf", 24);
     if (!font) {
         cerr << "Font could not be loaded! TTF_Error: " << TTF_GetError() << endl;
         TTF_Quit();
@@ -75,29 +83,29 @@ int main(int argc, char* argv[]) {
         return 4;
     }
 
-    srand(static_cast<unsigned>(time(nullptr)));// thay đổi giá trị ngẫu nhiên
+    srand(static_cast<unsigned>(time(nullptr)));
 
-    vector<Point> snake;//vector chứa các phần của rắn
+    vector<Point> snake;
     Direction snakeDirection = Direction::RIGHT;
-    Point food;//khai báo mồi
-    food.x = rand() % (SCREEN_WIDTH / GRID_SIZE);//hàm lấy ngẫu nhiên vị trị mồi
-    food.y = rand() % (SCREEN_HEIGHT / GRID_SIZE-4) + 2;
+    Point food;
+    food.x = rand() % (SCREEN_WIDTH / GRID_SIZE);
+    food.y = rand() % (SCREEN_HEIGHT / GRID_SIZE);
 
+    // Khởi tạo rắn ban đầu
     for (int i = 0; i < 4; ++i) {
         Point p;
-        p.x = (SCREEN_WIDTH / GRID_SIZE) / 2 - i;//sinh rắn
+        p.x = (SCREEN_WIDTH / GRID_SIZE) / 2 - i;
         p.y = SCREEN_HEIGHT / GRID_SIZE / 2;
         snake.push_back(p);
     }
-    //khởi tạo các check point
+
     int score = 0;
     bool quit = false;
     bool gameOver = false;
     bool gameStarted = false;
-    //vòng lặp chính
+
     while (!quit) {
         SDL_Event event;
-        //sử lý các sự kiện SDL
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 quit = true;
@@ -109,7 +117,6 @@ int main(int argc, char* argv[]) {
                             gameStarted = true;
                         }
                     }
-                    // Xử lý các phím mũi tên và ESC khi trò chơi đã bắt đầu
                     else {
                         switch (event.key.keysym.sym) {
                         case SDLK_UP:
@@ -132,27 +139,27 @@ int main(int argc, char* argv[]) {
                 }
                 else {
                     if (event.key.keysym.sym == SDLK_RETURN) {
-                        snake.clear();//bắt đầu lại trò chơi khi nhấn enter 
-                        for (int i = 0; i < 4; ++i) { //tạo lại vị trí ban đầu rắn 
+                        // Khởi tạo lại trò chơi sau khi kết thúc
+                        snake.clear();
+                        for (int i = 0; i < 4; ++i) {
                             Point p;
                             p.x = (SCREEN_WIDTH / GRID_SIZE) / 2 - i;
                             p.y = SCREEN_HEIGHT / GRID_SIZE / 2;
                             snake.push_back(p);
                         }
-                        // thiết lập hướng ban đầu, tạo lại food  và reset điểm về 0
                         snakeDirection = Direction::RIGHT;
                         score = 0;
                         gameOver = false;
                         gameStarted = false;
                         food.x = rand() % (SCREEN_WIDTH / GRID_SIZE);
-                        food.y = rand() % (SCREEN_HEIGHT / GRID_SIZE-4) + 2;
+                        food.y = rand() % (SCREEN_HEIGHT / GRID_SIZE);
                     }
                 }
             }
         }
-        // sử lý logic trò chơi 
+
+        // Xử lý logic trò chơi
         if (gameStarted && !gameOver) {
-            // logic di chuyển 
             Point newHead = snake[0];
             switch (snakeDirection) {
             case Direction::UP:
@@ -169,8 +176,10 @@ int main(int argc, char* argv[]) {
                 break;
             }
 
+            // Kiểm tra và điều chỉnh nếu rắn vượt ra khỏi biên
             CheckBorderCrossing(newHead);
 
+            // Kiểm tra va chạm với thân rắn
             for (size_t i = 1; i < snake.size(); ++i) {
                 if (newHead.x == snake[i].x && newHead.y == snake[i].y) {
                     cerr << "Snake collision!" << endl;
@@ -182,23 +191,25 @@ int main(int argc, char* argv[]) {
             if (!gameOver) {
                 snake.insert(snake.begin(), newHead);
 
-                if (newHead.x == food.x && newHead.y == food.y) {//nếu rắn ăn food thì sinh food mới
+                if (newHead.x == food.x && newHead.y == food.y) {
+                    // Nếu rắn ăn thức ăn, tạo thức ăn mới và tăng điểm số
                     food.x = rand() % (SCREEN_WIDTH / GRID_SIZE);
-                    food.y = rand() % (SCREEN_HEIGHT / GRID_SIZE-4) + 2;
+                    food.y = rand() % (SCREEN_HEIGHT / GRID_SIZE);
                     score += 10;
                 }
-                else {//
+                else {
+                    // Nếu không, rắn tiếp tục di chuyển và đuôi rắn bị cắt đi
                     snake.pop_back();
                 }
 
-                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);//Thiết lập màu nền cho cửa sổ trò chơi thành màu đen (RGB: 0, 0, 0) với độ trong suốt là 255 
-                SDL_RenderClear(renderer);//xóa mọi nội dung đã được vẽ trước đó trên renderer
-                //Vẽ một hình chữ nhật (foodRect) tại vị trí của thức ăn trên màn hình. Màu của hình chữ nhật này là đỏ (RGB: 255, 0, 0)
+                // Vẽ cảnh trò chơi
+                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+                SDL_RenderClear(renderer);
+
                 SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
                 SDL_Rect foodRect = { food.x * GRID_SIZE, food.y * GRID_SIZE, GRID_SIZE, GRID_SIZE };
                 SDL_RenderFillRect(renderer, &foodRect);
 
-                //Vẽ các phần của con rắn
                 for (size_t i = 0; i < snake.size(); ++i) {
                     SDL_Rect snakeRect = { snake[i].x * GRID_SIZE, snake[i].y * GRID_SIZE, GRID_SIZE, GRID_SIZE };
 
@@ -212,10 +223,8 @@ int main(int argc, char* argv[]) {
                     SDL_RenderFillRect(renderer, &snakeRect);
                 }
 
-                /*Vẽ điểm số của người chơi trên màn hình sử dụng màu xanh lục(RGB: 0, 255, 0).
-                Điểm số được chuyển đổi thành chuỗi và sau đó vẽ lên màn hình tại vị trí (10, 10).*/
                 SDL_Color textColor = { 0, 255, 0, 255 };
-                string scoreText = "Score:  " + to_string(score);
+                string scoreText = "Score: " + to_string(score);
                 SDL_Surface* textSurface = TTF_RenderText_Solid(font, scoreText.c_str(), textColor);
                 SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
                 SDL_Rect textRect = { 10, 10, textSurface->w, textSurface->h };
@@ -228,80 +237,46 @@ int main(int argc, char* argv[]) {
             }
         }
         else {
-            
-            // thực hiện các thao tác sau khi kết thúc trò chơi 
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
             SDL_RenderClear(renderer);
 
             if (gameOver) {
-                // Nếu trò chơi kết thúc:
-
-                // Thiết lập màu chữ và tạo chuỗi thông báo kết thúc trò chơi kèm theo điểm số
+                // Hiển thị thông báo kết thúc trò chơi và điểm số
                 SDL_Color textColor = { 255, 0, 0, 255 };
                 string gameOverText = "Game Over! Score: " + to_string(score);
-
-                // Tạo một bề mặt (textSurface) từ chuỗi kết quả với màu chữ được thiết lập
                 SDL_Surface* textSurface = TTF_RenderText_Solid(font, gameOverText.c_str(), textColor);
-
-                // Tạo một texture (textTexture) từ bề mặt văn bản để vẽ lên renderer
                 SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-
-                // Tạo một hình chữ nhật (textRect) để đặt vị trí và kích thước của văn bản trên màn hình
                 SDL_Rect textRect = { SCREEN_WIDTH / 4, SCREEN_HEIGHT / 2, textSurface->w, textSurface->h };
-
-                // Vẽ văn bản lên renderer tại vị trí và kích thước được xác định bởi textRect
                 SDL_RenderCopy(renderer, textTexture, nullptr, &textRect);
-
-                // Giải phóng bộ nhớ của bề mặt và texture để tránh rò rỉ bộ nhớ
                 SDL_FreeSurface(textSurface);
                 SDL_DestroyTexture(textTexture);
 
-                // Hiển thị thông báo lựa chọn tiếp tục hoặc kết thúc trò chơi
+                // Hiển thị hướng dẫn chơi lại hoặc thoát
                 SDL_Color exitTextColor = { 0, 255, 0, 255 };
-                string exitText = "Press  Enter  to Play Again or  ESC  to Exit";
-
-                // Tạo bề mặt và texture cho thông báo lựa chọn tiếp tục hoặc kết thúc
+                string exitText = "Press Enter to Play Again or ESC to Exit";
                 SDL_Surface* exitTextSurface = TTF_RenderText_Solid(font, exitText.c_str(), exitTextColor);
                 SDL_Texture* exitTextTexture = SDL_CreateTextureFromSurface(renderer, exitTextSurface);
-
-                // Tạo hình chữ nhật (exitTextRect) để đặt vị trí và kích thước của thông báo trên màn hình
-                SDL_Rect exitTextRect = { SCREEN_WIDTH / 8, (SCREEN_HEIGHT / 2) + 100, exitTextSurface->w, exitTextSurface->h };
-
-                // Vẽ thông báo lựa chọn trên renderer
+                SDL_Rect exitTextRect = { SCREEN_WIDTH / 4, (SCREEN_HEIGHT / 2) + 50, exitTextSurface->w, exitTextSurface->h };
                 SDL_RenderCopy(renderer, exitTextTexture, nullptr, &exitTextRect);
-
-                // Giải phóng bộ nhớ của bề mặt và texture
                 SDL_FreeSurface(exitTextSurface);
                 SDL_DestroyTexture(exitTextTexture);
 
-                // Hiển thị tất cả các thay đổi trên màn hình
                 SDL_RenderPresent(renderer);
             }
             else {
-                // Nếu trò chơi chưa bắt đầu hoặc đang chạy:
-
-                // Thiết lập màu chữ và tạo chuỗi thông báo bắt đầu trò chơi
+                // Hiển thị hướng dẫn bắt đầu trò chơi
                 SDL_Color startTextColor = { 0, 255, 0, 255 };
                 string startText = "Press Enter to Start";
-
-                // Tạo bề mặt và texture cho thông báo bắt đầu trò chơi
                 SDL_Surface* startTextSurface = TTF_RenderText_Solid(font, startText.c_str(), startTextColor);
                 SDL_Texture* startTextTexture = SDL_CreateTextureFromSurface(renderer, startTextSurface);
-
-                // Tạo hình chữ nhật (startTextRect) để đặt vị trí và kích thước của thông báo trên màn hình
                 SDL_Rect startTextRect = { SCREEN_WIDTH / 3, (SCREEN_HEIGHT / 2) - 25, startTextSurface->w, startTextSurface->h };
-
-                // Vẽ thông báo bắt đầu trò chơi lên renderer
                 SDL_RenderCopy(renderer, startTextTexture, nullptr, &startTextRect);
-
-                // Giải phóng bộ nhớ của bề mặt và texture
                 SDL_FreeSurface(startTextSurface);
                 SDL_DestroyTexture(startTextTexture);
 
-                // Hiển thị tất cả các thay đổi trên màn hình
                 SDL_RenderPresent(renderer);
             }
-            //sử lý sự kiện khi bắt đầu lại
+
             SDL_Event event;
             while (SDL_PollEvent(&event)) {
                 if (event.type == SDL_QUIT) {
@@ -310,6 +285,7 @@ int main(int argc, char* argv[]) {
                 else if (event.type == SDL_KEYDOWN) {
                     if (event.key.keysym.sym == SDLK_RETURN) {
                         if (gameOver) {
+                            // Khởi tạo lại trò chơi sau khi kết thúc
                             snake.clear();
                             for (int i = 0; i < 4; ++i) {
                                 Point p;
@@ -322,7 +298,7 @@ int main(int argc, char* argv[]) {
                             gameOver = false;
                             gameStarted = false;
                             food.x = rand() % (SCREEN_WIDTH / GRID_SIZE);
-                            food.y = rand() % (SCREEN_HEIGHT / GRID_SIZE -4) + 2;
+                            food.y = rand() % (SCREEN_HEIGHT / GRID_SIZE);
                         }
                         else {
                             gameStarted = true;
@@ -337,7 +313,7 @@ int main(int argc, char* argv[]) {
             }
         }
     }
-    // giải phóng bộ nhớ và tắt SDl khi thoát vòng lặp chính
+
     TTF_CloseFont(font);
     TTF_Quit();
     SDL_DestroyRenderer(renderer);
@@ -346,3 +322,14 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
+Chú thích cụ thể cho từng phần:
+
+Khai báo và khởi tạo các biến chính: Khai báo các biến sử dụng trong trò chơi như kích thước cửa sổ, màu sắc, và các biến cho rắn và thức ăn.
+
+Cấu trúc Point: Định nghĩa một cấu trúc để lưu trữ tọa độ (x, y) của một điểm.
+
+Liệt kê Direction: Định nghĩa một liệt kê để biểu thị hướng đi của rắn.
+
+Hàm CheckBorderCrossing: Hàm để kiểm tra và điều chỉnh tọa độ của đầu rắn nếu nó vượt ra khỏi biên.
+
+Hàm main: Hàm chính của chương trình. Nó chứa logic chính của trò chơi và xử lý sự kiện 
